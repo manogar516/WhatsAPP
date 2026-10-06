@@ -1,6 +1,5 @@
 const fs = require('fs');
 const path = require('path');
-const http = require('http');
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const { GoogleGenAI } = require('@google/genai');
 const puppeteer = require('puppeteer');
@@ -224,12 +223,3 @@ client.on('message_create', async msg => {
 process.on('unhandledRejection', e => console.error('Unhandled:', e));
 
 client.initialize().catch(err => console.error('INIT ERROR:', err));
-
-// Dummy HTTP Server to satisfy Render Web Service port check
-const PORT = process.env.PORT || 10000;
-http.createServer((req, res) => {
-  res.writeHead(200, { 'Content-Type': 'text/plain' });
-  res.end('WhatsApp Bot is running active! 🚀\n');
-}).listen(PORT, () => {
-  console.log(`Dummy web server listening on port ${PORT}`);
-});
