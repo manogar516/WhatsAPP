@@ -4,9 +4,7 @@ const http = require('http');
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const { GoogleGenAI } = require('@google/genai');
 const puppeteer = require('puppeteer');
-
-// Phone number for pairing code authentication (Country code + Number, no + sign)
-const PHONE_NUMBER = '919585970086';
+const qrcode = require('qrcode-terminal');
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || 'AQ.Ab8RN6JDiIPdvDtcig_mAYvHEx5n6Wj64MW6DuqXQvLRtmXJGA' });
 
@@ -18,7 +16,6 @@ const ALLOWED = new Set([
   '94704330895538@lid',
 ]);
 
-// Updated models to fix the 404 API error
 const MODELS = [
   'gemini-3.5-flash-lite',
   'gemini-3.1-flash-lite',
@@ -42,7 +39,6 @@ const GREETINGS = [
   'Hello 😄',
 ];
 
-// Updated system prompt: Prioritizes Tamil & Tanglish over Hindi
 const SYSTEM_PROMPT =
   'Your name is Anononymous_frriend. You are a funny, playful friend chatting on WhatsApp. ' +
   'Your main goal is to make people laugh with jokes, light roasts, puns and witty comebacks, ' +
@@ -85,7 +81,6 @@ async function sendGreetingGif(chatId) {
     const media = MessageMedia.fromFilePath(file);
     const ext = path.extname(file).toLowerCase();
 
-    // MP4/GIF files support text captions in a SINGLE message
     if (ext === '.mp4' || ext === '.webm' || ext === '.gif') {
       await client.sendMessage(chatId, media, {
         sendVideoAsGif: true,
@@ -93,13 +88,12 @@ async function sendGreetingGif(chatId) {
       });
       console.log('Sent video GIF with caption in 1 message:', path.basename(file));
     } else {
-      // .webp stickers cannot carry captions on WhatsApp
       await client.sendMessage(chatId, media, {
         sendMediaAsSticker: true,
         stickerAuthor: BOT_NAME,
         stickerName: 'Vanakkam',
       });
-      console.log('Sent .webp sticker (convert to .mp4/.gif for single message with text):', path.basename(file));
+      console.log('Sent .webp sticker:', path.basename(file));
       await sleep(300);
       await client.sendMessage(chatId, greetingText).catch(() => {});
     }
@@ -151,26 +145,12 @@ const client = new Client({
   },
 });
 
-// Phone number pairing code authentication (10s delay to allow DOM to render)
-let pairingCodeRequested = false;
-
-client.on('qr', async () => {
-  if (pairingCodeRequested) return;
-  pairingCodeRequested = true;
-
-  console.log('QR event received. Waiting 10 seconds for WhatsApp Web UI to load...');
-
-  setTimeout(async () => {
-    try {
-      const code = await client.requestPairingCode(PHONE_NUMBER);
-      console.log('\n==================================================');
-      console.log(`🔑 YOUR WHATSAPP PAIRING CODE: ${code}`);
-      console.log('==================================================\n');
-    } catch (err) {
-      console.error('Failed to generate pairing code:', err);
-      pairingCodeRequested = false;
-    }
-  }, 10000);
+// QR Code Terminal Handler
+client.on('qr', qr => {
+  console.log('\n==================================================');
+  console.log('📱 SCAN THIS QR CODE WITH WHATSAPP:');
+  console.log('==================================================\n');
+  qrcode.generate(qr, { small: true });
 });
 
 client.on('authenticated', () => console.log('Authenticated 🔐'));
