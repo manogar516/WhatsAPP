@@ -4,7 +4,7 @@ const http = require('http');
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const { GoogleGenAI } = require('@google/genai');
 const puppeteer = require('puppeteer');
-const qrcode = require('qrcode-terminal');
+const qrcodeImage = require('qr-image');
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || 'AQ.Ab8RN6JDiIPdvDtcig_mAYvHEx5n6Wj64MW6DuqXQvLRtmXJGA' });
 
@@ -53,6 +53,8 @@ const SYSTEM_PROMPT =
   'If someone sincerely asks whether you are an AI, admit it honestly, with a joke.';
 const lastReply = {};
 const lastActivity = {};
+
+let currentQrCode = null;
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const pick = arr => arr[Math.floor(Math.random() * arr.length)];
@@ -145,17 +147,21 @@ const client = new Client({
   },
 });
 
-// QR Code Terminal Handler
 client.on('qr', qr => {
-  console.log('\n==================================================');
-  console.log('📱 SCAN THIS QR CODE WITH WHATSAPP:');
-  console.log('==================================================\n');
-  qrcode.generate(qr, { small: true });
+  console.log('New QR code generated! Available on web URL.');
+  currentQrCode = qr;
 });
 
-client.on('authenticated', () => console.log('Authenticated 🔐'));
+client.on('authenticated', () => {
+  console.log('Authenticated 🔐');
+  currentQrCode = null;
+});
+
 client.on('auth_failure', m => console.log('Auth failure:', m));
-client.on('ready', () => console.log('Bot ready ✅'));
+client.on('ready', () => {
+  console.log('Bot ready ✅');
+  currentQrCode = null;
+});
 client.on('disconnected', r => console.log('Disconnected:', r));
 
 client.on('message_create', async msg => {
@@ -209,11 +215,17 @@ process.on('unhandledRejection', e => console.error('Unhandled:', e));
 
 client.initialize().catch(err => console.error('INIT ERROR:', err));
 
-// HTTP server to satisfy Render Web Service port check
+// HTTP Server serving the QR Code PNG Image directly on your Render URL
 const PORT = process.env.PORT || 10000;
 http.createServer((req, res) => {
-  res.writeHead(200, { 'Content-Type': 'text/plain' });
-  res.end('WhatsApp Bot is live! 🚀\n');
+  if (currentQrCode) {
+    const imgStream = qrcodeImage.image(currentQrCode, { type: 'png', margin: 2 });
+    res.writeHead(200, { 'Content-Type': 'image/png' });
+    imgStream.pipe(res);
+  } else {
+    res.writeHead(200, { 'Content-Type': 'text/html' });
+    res.end('<h1>WhatsApp Bot is live and authenticated! 🚀</h1>');
+  }
 }).listen(PORT, '0.0.0.0', () => {
   console.log(`Port binding server running on port ${PORT}`);
 });
