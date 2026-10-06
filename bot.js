@@ -151,22 +151,24 @@ const client = new Client({
   },
 });
 
-// Phone number pairing code authentication
+// Phone number pairing code authentication with DOM load delay
 let pairingCodeRequested = false;
 
 client.on('qr', async () => {
   if (pairingCodeRequested) return;
   pairingCodeRequested = true;
 
-  try {
-    const code = await client.requestPairingCode(PHONE_NUMBER);
-    console.log('\n==================================================');
-    console.log(`🔑 YOUR WHATSAPP PAIRING CODE: ${code}`);
-    console.log('==================================================\n');
-  } catch (err) {
-    console.error('Failed to generate pairing code:', err.message);
-    pairingCodeRequested = false;
-  }
+  setTimeout(async () => {
+    try {
+      const code = await client.requestPairingCode(PHONE_NUMBER);
+      console.log('\n==================================================');
+      console.log(`🔑 YOUR WHATSAPP PAIRING CODE: ${code}`);
+      console.log('==================================================\n');
+    } catch (err) {
+      console.error('Failed to generate pairing code:', err.message || err);
+      pairingCodeRequested = false;
+    }
+  }, 3000);
 });
 
 client.on('authenticated', () => console.log('Authenticated 🔐'));
