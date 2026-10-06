@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const { GoogleGenAI } = require('@google/genai');
+const puppeteer = require('puppeteer');
 
 // Replace with your phone number (Country code + Number, no + sign)
 const PHONE_NUMBER = '919791810520';
@@ -135,7 +136,17 @@ console.log('Starting bot...');
 const client = new Client({
   authStrategy: new LocalAuth(),
   puppeteer: {
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    executablePath: puppeteer.executablePath(),
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-accelerated-2d-canvas',
+      '--no-first-run',
+      '--no-zygote',
+      '--single-process',
+      '--disable-gpu',
+    ],
   },
 });
 
