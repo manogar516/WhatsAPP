@@ -151,12 +151,14 @@ const client = new Client({
   },
 });
 
-// Phone number pairing code authentication with DOM load delay
+// Phone number pairing code authentication (10s delay to allow DOM to render)
 let pairingCodeRequested = false;
 
 client.on('qr', async () => {
   if (pairingCodeRequested) return;
   pairingCodeRequested = true;
+
+  console.log('QR event received. Waiting 10 seconds for WhatsApp Web UI to load...');
 
   setTimeout(async () => {
     try {
@@ -165,10 +167,10 @@ client.on('qr', async () => {
       console.log(`🔑 YOUR WHATSAPP PAIRING CODE: ${code}`);
       console.log('==================================================\n');
     } catch (err) {
-      console.error('Failed to generate pairing code:', err.message || err);
+      console.error('Failed to generate pairing code:', err);
       pairingCodeRequested = false;
     }
-  }, 3000);
+  }, 10000);
 });
 
 client.on('authenticated', () => console.log('Authenticated 🔐'));
