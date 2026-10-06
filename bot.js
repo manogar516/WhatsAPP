@@ -1,11 +1,12 @@
 const fs = require('fs');
 const path = require('path');
+const http = require('http');
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const { GoogleGenAI } = require('@google/genai');
 const puppeteer = require('puppeteer');
 
-// Replace with your phone number (Country code + Number, no + sign)
-const PHONE_NUMBER = '919791810520';
+// Phone number for pairing code authentication (Country code + Number, no + sign)
+const PHONE_NUMBER = '919585970086';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || 'AQ.Ab8RN6JDiIPdvDtcig_mAYvHEx5n6Wj64MW6DuqXQvLRtmXJGA' });
 
@@ -150,8 +151,13 @@ const client = new Client({
   },
 });
 
-// Phone number pairing code authentication
+// Phone number pairing code authentication (requests code once)
+let pairingCodeRequested = false;
+
 client.on('qr', async () => {
+  if (pairingCodeRequested) return;
+  pairingCodeRequested = true;
+
   try {
     const code = await client.requestPairingCode(PHONE_NUMBER);
     console.log('\n==================================================');
@@ -159,6 +165,7 @@ client.on('qr', async () => {
     console.log('==================================================\n');
   } catch (err) {
     console.error('Failed to generate pairing code:', err.message);
+    pairingCodeRequested = false;
   }
 });
 
@@ -217,3 +224,12 @@ client.on('message_create', async msg => {
 process.on('unhandledRejection', e => console.error('Unhandled:', e));
 
 client.initialize().catch(err => console.error('INIT ERROR:', err));
+
+// Dummy HTTP Server to satisfy Render Web Service port check
+const PORT = process.env.PORT || 10000;
+http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('WhatsApp Bot is running active! 🚀\n');
+}).listen(PORT, () => {
+  console.log(`Dummy web server listening on port ${PORT}`);
+});
