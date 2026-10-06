@@ -51,9 +51,9 @@ const SYSTEM_PROMPT =
   'Never default or force Tanglish if the user is typing in standard English. ' +
   'Keep replies short and easy to read on a phone (under 100 words) with a few emojis. ' +
   'If someone sincerely asks whether you are an AI, admit it honestly, with a joke.';
+
 const lastReply = {};
 const lastActivity = {};
-
 let currentQrCode = null;
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -131,9 +131,16 @@ async function startStream(question) {
 console.log('Starting bot...');
 
 const client = new Client({
-  authStrategy: new LocalAuth(),
+  authStrategy: new LocalAuth({
+    dataPath: './.wwebjs_auth',
+  }),
+  webVersionCache: {
+    type: 'remote',
+    remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html',
+  },
   puppeteer: {
     executablePath: puppeteer.executablePath(),
+    headless: true,
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
@@ -143,12 +150,13 @@ const client = new Client({
       '--no-zygote',
       '--single-process',
       '--disable-gpu',
+      '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
     ],
   },
 });
 
 client.on('qr', qr => {
-  console.log('New QR code generated! Available on web URL.');
+  console.log('New QR code generated! Serve via web endpoint.');
   currentQrCode = qr;
 });
 
@@ -215,7 +223,7 @@ process.on('unhandledRejection', e => console.error('Unhandled:', e));
 
 client.initialize().catch(err => console.error('INIT ERROR:', err));
 
-// HTTP Server serving the QR Code PNG Image directly on your Render URL
+// HTTP Server serving the QR Code PNG directly on Render URL
 const PORT = process.env.PORT || 10000;
 http.createServer((req, res) => {
   if (currentQrCode) {
