@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const http = require('http');
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const { GoogleGenAI } = require('@google/genai');
 const puppeteer = require('puppeteer');
@@ -150,7 +151,7 @@ const client = new Client({
   },
 });
 
-// Phone number pairing code authentication (requests code once)
+// Phone number pairing code authentication
 let pairingCodeRequested = false;
 
 client.on('qr', async () => {
@@ -223,3 +224,12 @@ client.on('message_create', async msg => {
 process.on('unhandledRejection', e => console.error('Unhandled:', e));
 
 client.initialize().catch(err => console.error('INIT ERROR:', err));
+
+// HTTP server to satisfy Render Web Service port check
+const PORT = process.env.PORT || 10000;
+http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('WhatsApp Bot is live! 🚀\n');
+}).listen(PORT, '0.0.0.0', () => {
+  console.log(`Port binding server running on port ${PORT}`);
+});
