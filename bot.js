@@ -1,8 +1,10 @@
 const fs = require('fs');
 const path = require('path');
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
-const qrcode = require('qrcode-terminal');
 const { GoogleGenAI } = require('@google/genai');
+
+// Replace with your phone number (Country code + Number, no + sign)
+const PHONE_NUMBER = '919791810520';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || 'AQ.Ab8RN6JDiIPdvDtcig_mAYvHEx5n6Wj64MW6DuqXQvLRtmXJGA' });
 
@@ -31,7 +33,7 @@ const INACTIVITY_MS = 10 * 60 * 1000;
 const GIF_DIR = path.join(__dirname, 'gifs');
 
 const GREETINGS = [
-    'Hai Agalya 👋 ',
+  'Hai Agalya 👋 ',
   'Vanakkam 🙏',
   'Hai Hello',
   'Hai 👋',
@@ -137,7 +139,18 @@ const client = new Client({
   },
 });
 
-client.on('qr', q => qrcode.generate(q, { small: true }));
+// Phone number pairing code authentication
+client.on('qr', async () => {
+  try {
+    const code = await client.requestPairingCode(PHONE_NUMBER);
+    console.log('\n==================================================');
+    console.log(`🔑 YOUR WHATSAPP PAIRING CODE: ${code}`);
+    console.log('==================================================\n');
+  } catch (err) {
+    console.error('Failed to generate pairing code:', err.message);
+  }
+});
+
 client.on('authenticated', () => console.log('Authenticated 🔐'));
 client.on('auth_failure', m => console.log('Auth failure:', m));
 client.on('ready', () => console.log('Bot ready ✅'));
